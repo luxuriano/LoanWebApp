@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Asistente</title>
+    <style>
+        body {
+            padding: 1rem;
+            margin: 0;
+            background: linear-gradient(135deg, #1a1a1a, #2c2c2c);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+            color: white;
+            text-align: center;
+        }
+
+        .siri-container {
+            max-width: 360px;
+            width: 100%;
+        }
+
+        .siri-circle {
+            margin: auto;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(0, 122, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 122, 255, 0.8);
+            transition: transform 0.2s ease;
+        }
+
+        .siri-circle:hover {
+            transform: scale(1.05);
+        }
+
+        .status {
+            margin-top: 1rem;
+            font-size: 16px;
+            min-height: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="siri-container">
+        <div class="siri-circle">🎤</div>
+        <div class="status">Hacé clic y hablá con Loan</div>
+    </div>
+
+    <script>
+        const status = document.querySelector('.status');
+        const micButton = document.querySelector('.siri-circle');
+
+        micButton.addEventListener('click', () => {
+            status.textContent = "🎙️ Escuchando...";
+
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = "es-ES";
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.start();
+
+            recognition.onresult = async (event) => {
+                const pregunta = event.results[0][0].transcript;
+                status.textContent = `🗣️ Preguntaste: "${pregunta}"`;
+
+                const response = await fetch('https://TU_BACKEND.onrender.com/preguntar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mensaje: pregunta })
+                });
+
+                const data = await response.json();
+                if (data.respuesta) {
+                    status.textContent = data.respuesta;
+
+                    speechSynthesis.cancel();
+                    const partes = data.respuesta.match(/[^.!?]+[.!?]+|\s*$/g);
+
+                    for (const frase of partes) {
+                        if (frase.trim()) {
+                            const voz = new SpeechSynthesisUtterance(frase.trim());
+                            voz.lang = 'es-ES';
+                            speechSynthesis.speak(voz);
+                        }
+                    }
+                } else {
+                    status.textContent = "❌ Error al obtener respuesta.";
+                }
+            };
+
+            recognition.onerror = (event) => {
+                status.textContent = "❌ No se pudo escuchar: " + event.error;
+            };
+        });
+    </script>
+</body>
+</html>
