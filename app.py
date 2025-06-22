@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 from LoanAPP import obtener_respuesta
 
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__, template_folder=".")
 
 @app.route('/')
 def home():
